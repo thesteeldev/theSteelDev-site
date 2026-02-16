@@ -3,94 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TheSteelDev AI Planner</title>
-
+    <title>SteelDev OS</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --bg: #0f0f0f; --card: #1e1e1e; --primary: #bb86fc; --text: #e0e0e0; --success: #03dac6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        :root { --bg: #0f0f0f; --card: #1e1e1e; --primary: #bb86fc; --text: #e0e0e0; --success: #03dac6; --danger: #cf6679; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
 
-        /* Dashboard Grid */
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { text-align: center; color: var(--primary); }
+        /* HEADER */
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--card); border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
+        .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; }
+        .logo { font-size: 20px; font-weight: bold; color: var(--primary); }
+
+        /* SIDEBAR */
+        .sidebar { height: 100%; width: 250px; position: fixed; z-index: 200; top: 0; left: -250px; background-color: #121212; transition: 0.3s; padding-top: 60px; border-right: 1px solid #333; }
+        .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 18px; color: #aaa; display: block; transition: 0.2s; }
+        .sidebar a:hover { color: #fff; background: #222; }
+        .sidebar .closebtn { position: absolute; top: 10px; right: 25px; font-size: 36px; margin-left: 50px; border: none; background: none; color: #fff; cursor: pointer;}
+        .sidebar-open { left: 0; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; }
+
+        /* MAIN CONTAINER */
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .hidden { display: none !important; }
+
+        /* PROJECT LIST CARD */
+        .project-card { background: var(--card); padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .project-card:hover { transform: translateY(-2px); background: #252525; }
+        .proj-info { flex-grow: 1; }
+        .proj-actions button { background: none; border: none; color: #777; cursor: pointer; font-size: 16px; margin-left: 10px; }
+        .proj-actions button:hover { color: var(--text); }
+        .proj-actions .del-btn:hover { color: var(--danger); }
+
+        /* JOURNAL STYLES (Your requested style) */
+        .journal-box { background: var(--card); padding: 20px; border-radius: 10px; }
+        .journal-input { width: 100%; height: 150px; background: #222; color: white; border: 1px solid #444; padding: 15px; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; margin-bottom: 15px; }
+        .voice-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .lang-btn { flex: 1; padding: 8px; background: #333; border: 1px solid #555; color: #aaa; border-radius: 5px; cursor: pointer; }
+        .lang-btn.active { background: var(--primary); color: black; border-color: var(--primary); font-weight: bold; }
+        .mic-btn { width: 50px; background: #333; border-radius: 50%; border: 1px solid #555; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .mic-btn.listening { background: var(--danger); border-color: var(--danger); animation: pulse 1.5s infinite; }
+
+        .save-btn { width: 100%; padding: 12px; background: var(--primary); color: black; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .entry-card { background: #222; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 3px solid #03dac6; }
+
+        /* MODALS (Create & View) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 300; overflow-y: auto; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
+
+        /* Dynamic Task Input */
+        .step-input-group { display: flex; gap: 5px; margin-bottom: 5px; }
+        .step-input-group input { margin: 0; }
+        .add-step-btn { background: #333; color: var(--success); border: 1px solid var(--success); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-bottom: 15px; }
+
+        /* INSIDE PROJECT VIEW */
+        .task-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #333; }
+        .task-row input[type="checkbox"] { transform: scale(1.3); accent-color: var(--success); }
+        .task-row.done span { text-decoration: line-through; color: #666; }
+
+        .history-section { margin-top: 20px; padding-top: 10px; border-top: 1px solid #444; }
+        .history-log { background: #181818; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 14px; display: flex; justify-content: space-between; }
+        .log-good { border-left: 3px solid var(--success); }
+        .log-bad { border-left: 3px solid var(--danger); }
+        .log-date { font-size: 10px; color: #666; display: block; margin-bottom: 2px; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(207, 102, 121, 0); } 100% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0); } }
 
         /* Floating Add Button */
-        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #000; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(187,134,252,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
-        .fab:hover { transform: scale(1.1); }
-
-        /* Project Card Style */
-        .project-card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .progress-bar-bg { background: #333; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
-        .progress-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.5s ease; }
-
-        /* Checklist Items */
-        .task-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #333; }
-        .task-item input[type="checkbox"] { transform: scale(1.2); accent-color: var(--success); }
-        .task-item.done span { text-decoration: line-through; color: #777; }
-
-        /* Modal (Popup) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
-        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
-        .ai-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0; color: var(--success); font-weight: bold; }
-
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 5px; }
-        .btn-save { background: var(--success); color: #000; }
-        .btn-cancel { background: #333; color: white; }
-
-        /* Login Screen */
-        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .hidden { display: none !important; }
+        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #000; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(187,134,252,0.4); z-index: 90; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <h1>🔐 SteelDev OS</h1>
-        <p>Login to access your workspace</p>
-        <button class="btn btn-save" onclick="loginWithGoogle()">Sign in with Google</button>
+    <div id="login-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center;">
+        <h1 style="color:var(--primary)">🔐 SteelDev OS</h1>
+        <button onclick="login()" style="padding:12px 24px; background:var(--success); border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Sign in with Google</button>
     </div>
 
-    <div id="dashboard" class="container hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>🚀 My Projects</h2>
-            <button class="btn btn-cancel" onclick="logout()" style="font-size: 12px;">Logout</button>
+    <div id="app-screen" class="hidden">
+
+        <div id="overlay" class="overlay" onclick="closeNav()"></div>
+
+        <div id="mySidebar" class="sidebar">
+            <button class="closebtn" onclick="closeNav()">&times;</button>
+            <h3 style="padding-left:25px; color:var(--primary);">Menu</h3>
+            <a href="#" onclick="switchView('projects')"><i class="fas fa-rocket"></i> Projects</a>
+            <a href="#" onclick="switchView('journal')"><i class="fas fa-book"></i> Journal</a>
+            <a href="#" onclick="logout()" style="color:var(--danger); margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
 
-        <div id="projects-list">
-            <p style="text-align: center; color: #777;">Loading projects...</p>
+        <div class="header">
+            <button class="menu-btn" onclick="openNav()"><i class="fas fa-bars"></i></button>
+            <div class="logo" id="pageTitle">My Projects</div>
+            <div style="width:24px"></div>
         </div>
 
-        <button class="fab" onclick="openModal()">+</button>
+        <div id="view-projects" class="container">
+            <div id="projects-list">Loading...</div>
+            <button class="fab" onclick="openCreateModal()">+</button>
+        </div>
+
+        <div id="view-journal" class="container hidden">
+            <div class="journal-box">
+                <div class="voice-controls">
+                    <button class="lang-btn active" id="btn-en" onclick="setLang('en-US')">English</button>
+                    <button class="lang-btn" id="btn-ta" onclick="setLang('ta-IN')">தமிழ்</button>
+                    <button class="mic-btn" id="micBtn" onclick="toggleSpeech()"><i class="fas fa-microphone"></i></button>
+                </div>
+                <textarea id="journalInput" class="journal-input" placeholder="Tap microphone to speak..."></textarea>
+                <button class="save-btn" onclick="saveEntry()">Save to Cloud</button>
+            </div>
+            <div id="journal-history"></div>
+        </div>
+
     </div>
 
-    <div id="modal" class="modal">
+    <div id="createModal" class="modal">
         <div class="modal-content">
-            <h3>New Mission</h3>
-            <input type="text" id="projTitle" placeholder="Ex: Learn Python, Build Gym Body...">
+            <h3>Start New Project</h3>
+            <input type="text" id="newTitle" placeholder="Project Title (e.g., Build Gym Body)">
 
-            <div class="ai-toggle">
-                <input type="checkbox" id="aiCheck" checked>
-                <label for="aiCheck">✨ Generate Roadmap with AI</label>
+            <p style="margin-bottom:5px; color:#aaa; font-size:14px;">What steps will you take?</p>
+            <div id="steps-container">
+                <div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div>
+            </div>
+            <button class="add-step-btn" onclick="addStepField()">+ Add Step</button>
+
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button onclick="createProject()" style="flex:1; padding:10px; background:var(--success); border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Create Project</button>
+                <button onclick="closeModal('createModal')" style="flex:1; padding:10px; background:#333; border:none; border-radius:5px; color:white; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content" style="max-width:600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="detailTitle" style="color:var(--primary); margin:0;">Title</h2>
+                <button onclick="closeModal('detailModal')" style="background:none; border:none; color:#777; font-size:20px; cursor:pointer;">&times;</button>
             </div>
 
-            <div id="loadingAI" style="display:none; color: var(--primary); margin-bottom: 10px;">🤖 AI is thinking...</div>
+            <h4 style="margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">Checklist</h4>
+            <div id="detailTasks"></div>
 
-            <button class="btn btn-save" onclick="createProject()">Create</button>
-            <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+            <div class="history-section">
+                <h4>Project History / Logs</h4>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="logInput" placeholder="Log a mistake or win..." style="margin:0;">
+                    <button onclick="addLog('good')" style="background:none; border:1px solid var(--success); color:var(--success); border-radius:5px; cursor:pointer; padding:0 10px;">Good</button>
+                    <button onclick="addLog('bad')" style="background:none; border:1px solid var(--danger); color:var(--danger); border-radius:5px; cursor:pointer; padding:0 10px;">Mistake</button>
+                </div>
+                <div id="detailLogs"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const API_URL = "https://my-journal-new.onrender.com"; // Your Render URL
 
-        // 👇 இங்கே உங்களின் சரியான FIREBASE KEY இருக்க வேண்டும் (Gemini Key போடாதீங்க!)
         const firebaseConfig = {
-            apiKey: "AIzaSyCh2xTrbOz3F9uZkMeKlr2g7Pk94TkJMd8", // <--- இதுதான் சரியான Firebase Key
+            apiKey: "AIzaSyCh2xTrbOz3F9uZkMeKlr2g7Pk94TkJMd8",
             authDomain: "steeldev-journal.firebaseapp.com",
             projectId: "steeldev-journal",
             storageBucket: "steeldev-journal.firebasestorage.app",
@@ -98,134 +173,272 @@
             appId: "1:923272289095:web:289dcf21213c497b808a62"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
-        let currentUserEmail = "";
+        let userEmail = "";
+        let currentProjectId = null; // To track open project
 
         // --- AUTH ---
-        function loginWithGoogle() { auth.signInWithPopup(provider); }
-        function logout() { auth.signOut(); }
+        function login() { auth.signInWithPopup(provider); }
+        function logout() { auth.signOut(); location.reload(); }
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                currentUserEmail = user.email;
+                userEmail = user.email;
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
                 loadProjects();
             } else {
                 document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('app-screen').classList.add('hidden');
             }
         });
 
-        // --- CORE FUNCTIONS ---
+        // --- NAVIGATION ---
+        function openNav() { document.getElementById("mySidebar").classList.add("sidebar-open"); document.getElementById("overlay").style.display="block"; }
+        function closeNav() { document.getElementById("mySidebar").classList.remove("sidebar-open"); document.getElementById("overlay").style.display="none"; }
 
-        // 1. Create Project (Calls AI if checked)
-        async function createProject() {
-            const title = document.getElementById('projTitle').value;
-            const useAI = document.getElementById('aiCheck').checked;
+        function switchView(viewName) {
+            closeNav();
+            document.getElementById('view-projects').classList.add('hidden');
+            document.getElementById('view-journal').classList.add('hidden');
 
-            if(!title) return alert("Enter a title!");
-
-            document.getElementById('loadingAI').style.display = 'block';
-            let tasks = [];
-
-            if (useAI) {
-                try {
-                    // Call Backend to ask Gemini
-                    const res = await fetch(`${API_URL}/generate_roadmap`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ title: title })
-                    });
-                    const data = await res.json();
-                    tasks = data.tasks;
-                } catch (e) {
-                    alert("AI Error, creating manual project.");
-                    tasks = ["Step 1 (Add details)"];
-                }
+            if(viewName === 'projects') {
+                document.getElementById('view-projects').classList.remove('hidden');
+                document.getElementById('pageTitle').innerText = "My Projects";
+                loadProjects();
             } else {
-                tasks = ["Start Project"];
+                document.getElementById('view-journal').classList.remove('hidden');
+                document.getElementById('pageTitle').innerText = "My Journal";
+                loadJournal();
             }
-
-            // Save Final Project to DB
-            await fetch(`${API_URL}/create_project`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    user: currentUserEmail,
-                    title: title,
-                    tasks: tasks,
-                    color: getRandomColor()
-                })
-            });
-
-            closeModal();
-            loadProjects(); // Refresh UI
         }
 
-        // 2. Load Projects
+        // --- PROJECTS LOGIC ---
         async function loadProjects() {
-            const res = await fetch(`${API_URL}/get_projects?user=${currentUserEmail}`);
+            const res = await fetch(`${API_URL}/get_projects?user=${userEmail}`);
             const projects = await res.json();
-
-            if (projects.error || !Array.isArray(projects)) {
-                console.error("Backend Error:", projects.error);
-                return;
-            }
             const list = document.getElementById('projects-list');
             list.innerHTML = "";
 
             projects.forEach(p => {
-                // Calculate Checklist HTML
-                let tasksHtml = "";
-                p.tasks.forEach((t, index) => {
-                    const checked = t.done ? "checked" : "";
-                    const doneClass = t.done ? "done" : "";
-                    tasksHtml += `
-                        <div class="task-item ${doneClass}">
-                            <input type="checkbox" ${checked} onchange="toggleTask('${p._id}', ${index}, this.checked)">
-                            <span>${t.text}</span>
-                        </div>`;
-                });
-
                 list.innerHTML += `
-                    <div class="project-card" style="border-left-color: ${p.color}">
-                        <div class="card-header">
-                            <h3>${p.title}</h3>
-                            <span style="font-size: 20px; font-weight:bold; color: ${p.color}">${p.progress}%</span>
+                    <div class="project-card" style="border-left-color:${p.color}">
+                        <div class="proj-info" onclick="openProjectDetail('${p._id}')">
+                            <h3 style="margin:0;">${p.title}</h3>
+                            <small style="color:#777">${p.progress}% Complete</small>
+                            <div style="background:#333; height:4px; width:100%; margin-top:5px; border-radius:2px;">
+                                <div style="background:${p.color}; height:100%; width:${p.progress}%"></div>
+                            </div>
                         </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" style="width: ${p.progress}%; background: ${p.color}"></div>
+                        <div class="proj-actions">
+                            <button onclick="openProjectDetail('${p._id}')"><i class="fas fa-edit"></i></button>
+                            <button class="del-btn" onclick="deleteProject('${p._id}')"><i class="fas fa-trash"></i></button>
                         </div>
-                        <div class="tasks-container">
-                            ${tasksHtml}
-                        </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        // 3. Update Task Status
-        async function toggleTask(projectId, taskIndex, isDone) {
-            await fetch(`${API_URL}/update_task`, {
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+            document.getElementById('newTitle').value = "";
+            document.getElementById('steps-container').innerHTML = `<div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div>`;
+        }
+
+        function addStepField() {
+            const div = document.createElement('div');
+            div.className = 'step-input-group';
+            div.innerHTML = `<input type="text" class="step-field" placeholder="Next step...">`;
+            document.getElementById('steps-container').appendChild(div);
+        }
+
+        async function createProject() {
+            const title = document.getElementById('newTitle').value;
+            const inputs = document.querySelectorAll('.step-field');
+            let tasks = [];
+            inputs.forEach(input => { if(input.value.trim()) tasks.push(input.value.trim()); });
+
+            if(!title || tasks.length === 0) return alert("Please enter title and at least one step.");
+
+            await fetch(`${API_URL}/create_project`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    project_id: projectId,
-                    task_index: taskIndex,
-                    is_done: isDone
-                })
+                body: JSON.stringify({ user: userEmail, title: title, tasks: tasks })
             });
-            loadProjects(); // Refresh to update progress bar
+            closeModal('createModal');
+            loadProjects();
         }
 
-        // Utils
-        function openModal() { document.getElementById('modal').style.display = 'flex'; document.getElementById('loadingAI').style.display = 'none'; document.getElementById('projTitle').value = ""; }
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        function getRandomColor() { const colors = ['#ff7597', '#bb86fc', '#03dac6', '#ffb74d']; return colors[Math.floor(Math.random() * colors.length)]; }
+        async function deleteProject(pid) {
+            if(!confirm("Delete this project?")) return;
+            await fetch(`${API_URL}/delete_project`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ project_id: pid })
+            });
+            loadProjects();
+        }
+
+        // --- PROJECT DETAIL & HISTORY LOGIC ---
+        let loadedProjectsCache = []; // Store to avoid re-fetch for details
+
+        async function openProjectDetail(pid) {
+            currentProjectId = pid;
+            const res = await fetch(`${API_URL}/get_projects?user=${userEmail}`); // Re-fetch to get latest logs
+            const projects = await res.json();
+            const p = projects.find(proj => proj._id === pid);
+
+            document.getElementById('detailTitle').innerText = p.title;
+            document.getElementById('detailTitle').style.color = p.color;
+
+            // Render Tasks
+            const tasksDiv = document.getElementById('detailTasks');
+            tasksDiv.innerHTML = "";
+            p.tasks.forEach((t, idx) => {
+                tasksDiv.innerHTML += `
+                    <div class="task-row ${t.done ? 'done' : ''}">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${p._id}', ${idx}, this.checked)">
+                        <span>${t.text}</span>
+                    </div>`;
+            });
+
+            // Render Logs
+            renderLogs(p.logs);
+
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function renderLogs(logs) {
+            const logsDiv = document.getElementById('detailLogs');
+            logsDiv.innerHTML = "";
+            if(!logs || logs.length === 0) {
+                logsDiv.innerHTML = "<small style='color:#555'>No history yet.</small>";
+                return;
+            }
+            // Show latest first
+            logs.slice().reverse().forEach(log => {
+                const borderClass = log.type === 'good' ? 'log-good' : 'log-bad';
+                logsDiv.innerHTML += `
+                    <div class="history-log ${borderClass}">
+                        <div>
+                            <span class="log-date">${log.date}</span>
+                            ${log.text}
+                        </div>
+                        <button onclick="deleteLog('${log.id}')" style="background:none; border:none; color:#555; cursor:pointer;">&times;</button>
+                    </div>`;
+            });
+        }
+
+        async function toggleTask(pid, idx, val) {
+            await fetch(`${API_URL}/update_task`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ project_id: pid, task_index: idx, is_done: val })
+            });
+            // Don't close modal, just refresh lists
+            openProjectDetail(pid);
+            loadProjects(); // Update background list
+        }
+
+        async function addLog(type) {
+            const txt = document.getElementById('logInput').value;
+            if(!txt) return;
+
+            await fetch(`${API_URL}/add_project_log`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ project_id: currentProjectId, text: txt, type: type })
+            });
+            document.getElementById('logInput').value = "";
+            openProjectDetail(currentProjectId);
+        }
+
+        async function deleteLog(logId) {
+            if(!confirm("Remove log?")) return;
+            await fetch(`${API_URL}/delete_project_log`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ project_id: currentProjectId, log_id: logId })
+            });
+            openProjectDetail(currentProjectId);
+        }
+
+        // --- JOURNAL LOGIC (VOICE) ---
+        let recognition;
+        let isListening = false;
+        let currentLang = 'en-US';
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.results.length - 1][0].transcript;
+                document.getElementById('journalInput').value += transcript + " ";
+            };
+
+            recognition.onerror = (e) => { console.error(e); isListening = false; updateMicUI(); };
+            recognition.onend = () => { if(isListening) recognition.start(); }; // Keep listening
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.getElementById('btn-en').classList.remove('active');
+            document.getElementById('btn-ta').classList.remove('active');
+            if(lang === 'en-US') document.getElementById('btn-en').classList.add('active');
+            else document.getElementById('btn-ta').classList.add('active');
+
+            if(isListening) {
+                recognition.stop();
+                isListening = false;
+                updateMicUI();
+            }
+        }
+
+        function toggleSpeech() {
+            if(!recognition) return alert("Browser not supported");
+            if(isListening) {
+                recognition.stop();
+                isListening = false;
+            } else {
+                recognition.lang = currentLang;
+                recognition.start();
+                isListening = true;
+            }
+            updateMicUI();
+        }
+
+        function updateMicUI() {
+            const btn = document.getElementById('micBtn');
+            if(isListening) btn.classList.add('listening');
+            else btn.classList.remove('listening');
+        }
+
+        async function saveEntry() {
+            const txt = document.getElementById('journalInput').value;
+            if(!txt) return alert("Empty entry!");
+            await fetch(`${API_URL}/add_journal`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user: userEmail, content: txt })
+            });
+            document.getElementById('journalInput').value = "";
+            loadJournal();
+        }
+
+        async function loadJournal() {
+            const res = await fetch(`${API_URL}/get_journal?user=${userEmail}`);
+            const logs = await res.json();
+            const div = document.getElementById('journal-history');
+            div.innerHTML = "";
+            logs.forEach(l => {
+                div.innerHTML += `
+                    <div class="entry-card">
+                        <small style="color:#777">${l.date} ${l.time}</small>
+                        <p style="margin-top:5px;">${l.content}</p>
+                    </div>`;
+            });
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     </script>
 </body>
 </html>
