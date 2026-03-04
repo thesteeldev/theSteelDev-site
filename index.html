@@ -4,20 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SteelDev OS</title>
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
     <style>
-        :root { --bg: #0f0f0f; --card: #1e1e1e; --primary: #bb86fc; --text: #e0e0e0; --success: #03dac6; --danger: #cf6679; }
+        :root { --bg: #0f0f0f; --card: #1e1e1e; --primary: #bb86fc; --text: #e0e0e0; --success: #03dac6; --danger: #cf6679; --hacker: #00ff41; --hacker-bg: #001100; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
 
-        /* HEADER */
+        /* HEADER & SIDEBAR */
         .header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--card); border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
         .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; }
-        .logo { font-size: 20px; font-weight: bold; color: var(--primary); }
+        .logo { font-size: 20px; font-weight: bold; color: var(--primary); cursor: pointer; user-select: none; }
 
-        /* SIDEBAR */
         .sidebar { height: 100%; width: 250px; position: fixed; z-index: 200; top: 0; left: -250px; background-color: #121212; transition: 0.3s; padding-top: 60px; border-right: 1px solid #333; }
         .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 18px; color: #aaa; display: block; transition: 0.2s; }
         .sidebar a:hover { color: #fff; background: #222; }
@@ -25,19 +27,12 @@
         .sidebar-open { left: 0; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; }
 
-        /* MAIN CONTAINER */
+        /* COMMON CONTAINERS */
         .container { padding: 20px; max-width: 800px; margin: 0 auto; }
         .hidden { display: none !important; }
 
-        /* PROJECT LIST CARD */
+        /* PROJECT & JOURNAL UI */
         .project-card { background: var(--card); padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .project-card:hover { transform: translateY(-2px); background: #252525; }
-        .proj-info { flex-grow: 1; }
-        .proj-actions button { background: none; border: none; color: #777; cursor: pointer; font-size: 16px; margin-left: 10px; }
-        .proj-actions button:hover { color: var(--text); }
-        .proj-actions .del-btn:hover { color: var(--danger); }
-
-        /* JOURNAL STYLES (Your requested style) */
         .journal-box { background: var(--card); padding: 20px; border-radius: 10px; }
         .journal-input { width: 100%; height: 150px; background: #222; color: white; border: 1px solid #444; padding: 15px; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; margin-bottom: 15px; }
         .voice-controls { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -45,35 +40,56 @@
         .lang-btn.active { background: var(--primary); color: black; border-color: var(--primary); font-weight: bold; }
         .mic-btn { width: 50px; background: #333; border-radius: 50%; border: 1px solid #555; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .mic-btn.listening { background: var(--danger); border-color: var(--danger); animation: pulse 1.5s infinite; }
-
         .save-btn { width: 100%; padding: 12px; background: var(--primary); color: black; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         .entry-card { background: #222; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 3px solid #03dac6; }
 
-        /* MODALS (Create & View) */
+        /* POMODORO UI */
+        .pomodoro-box { background: var(--card); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .timer-display { font-size: 80px; font-weight: bold; color: #ffb74d; font-family: 'Courier New', monospace; margin: 20px 0; }
+        .timer-controls { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+        .btn-pomo { padding: 15px 30px; font-size: 18px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-start { background: var(--success); color: black; }
+        .btn-pause { background: #ffb74d; color: black; }
+        .btn-stop { background: var(--danger); color: white; }
+
+        /* SECRET LAB (HACKER THEME) */
+        .secret-lab-container { background: var(--hacker-bg); color: var(--hacker); font-family: 'Share Tech Mono', monospace; padding: 0; min-height: 100vh; position: fixed; top: 0; left: 0; width: 100%; z-index: 500; display: none; overflow-y: auto; }
+        .detective-grid { display: grid; grid-template-columns: 200px 1fr; height: 100vh; }
+        .detective-nav { border-right: 1px solid var(--hacker); padding: 20px; background: rgba(0,20,0,0.9); }
+        .detective-nav button { display: block; width: 100%; background: transparent; border: 1px solid var(--hacker); color: var(--hacker); padding: 15px; margin-bottom: 10px; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: 16px; text-align: left; transition: 0.3s; text-transform: uppercase; }
+        .detective-nav button:hover, .detective-nav button.active { background: var(--hacker); color: black; box-shadow: 0 0 10px var(--hacker); }
+        .detective-main { padding: 30px; overflow-y: auto; }
+        .tool-panel { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tool-panel.active { display: block; }
+
+        .hacker-box { border: 1px solid var(--hacker); padding: 20px; margin-bottom: 20px; position: relative; background: rgba(0, 20, 0, 0.5); }
+        .hacker-box::before { content: ''; position: absolute; top: -5px; left: 10px; background: var(--hacker-bg); padding: 0 10px; color: var(--hacker); font-size: 12px; }
+        .hacker-input { width: 100%; background: black; border: 1px solid #333; color: var(--hacker); padding: 10px; font-family: 'Share Tech Mono', monospace; margin-bottom: 10px; }
+        .hacker-btn { background: #003300; border: 1px solid var(--hacker); color: var(--hacker); padding: 10px 20px; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-weight: bold; margin-right: 10px; transition: 0.2s; }
+        .hacker-btn:hover { background: var(--hacker); color: black; box-shadow: 0 0 15px var(--hacker); }
+
+        .recon-data { font-size: 16px; line-height: 1.8; white-space: pre-wrap; color: var(--hacker); }
+        .recon-loading { animation: blink 0.5s infinite; color: var(--danger); font-weight: bold; }
+
+        .cipher-controls { display: flex; align-items: center; gap: 20px; margin: 15px 0; }
+        .exif-display { font-size: 14px; line-height: 1.6; color: #fff; margin-top: 10px; white-space: pre-wrap; }
+        .riddle-box { font-size: 18px; margin: 20px 0; padding: 20px; border-left: 3px solid var(--hacker); background: #001100; }
+        .answer-box { margin-top: 10px; color: var(--primary); font-weight: bold; display: none; }
+        .intel-log { border-left: 2px solid var(--hacker); padding-left: 10px; margin-bottom: 10px; font-size: 14px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 300; overflow-y: auto; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
-
-        /* Dynamic Task Input */
-        .step-input-group { display: flex; gap: 5px; margin-bottom: 5px; }
-        .step-input-group input { margin: 0; }
-        .add-step-btn { background: #333; color: var(--success); border: 1px solid var(--success); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-bottom: 15px; }
-
-        /* INSIDE PROJECT VIEW */
+        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; color: var(--text); font-family: 'Segoe UI', sans-serif; }
+        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #000; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(187,134,252,0.4); z-index: 90; }
         .task-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #333; }
         .task-row input[type="checkbox"] { transform: scale(1.3); accent-color: var(--success); }
         .task-row.done span { text-decoration: line-through; color: #666; }
-
-        .history-section { margin-top: 20px; padding-top: 10px; border-top: 1px solid #444; }
         .history-log { background: #181818; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 14px; display: flex; justify-content: space-between; }
         .log-good { border-left: 3px solid var(--success); }
         .log-bad { border-left: 3px solid var(--danger); }
-        .log-date { font-size: 10px; color: #666; display: block; margin-bottom: 2px; }
-
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(207, 102, 121, 0); } 100% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0); } }
-
-        /* Floating Add Button */
-        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #000; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(187,134,252,0.4); z-index: 90; }
     </style>
 </head>
 <body>
@@ -92,12 +108,13 @@
             <h3 style="padding-left:25px; color:var(--primary);">Menu</h3>
             <a href="#" onclick="switchView('projects')"><i class="fas fa-rocket"></i> Projects</a>
             <a href="#" onclick="switchView('journal')"><i class="fas fa-book"></i> Journal</a>
+            <a href="#" onclick="switchView('pomodoro')"><i class="fas fa-clock"></i> Pomodoro</a>
             <a href="#" onclick="logout()" style="color:var(--danger); margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
 
         <div class="header">
             <button class="menu-btn" onclick="openNav()"><i class="fas fa-bars"></i></button>
-            <div class="logo" id="pageTitle">My Projects</div>
+            <div class="logo" id="pageTitle" onclick="triggerSecretLab()">My Projects</div>
             <div style="width:24px"></div>
         </div>
 
@@ -119,67 +136,131 @@
             <div id="journal-history"></div>
         </div>
 
+        <div id="view-pomodoro" class="container hidden">
+            <div class="pomodoro-box">
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                <div class="timer-controls">
+                    <button class="btn-pomo btn-start" onclick="startTimer()">Start</button>
+                    <button class="btn-pomo btn-pause" onclick="pauseTimer()">Pause</button>
+                    <button class="btn-pomo btn-stop" onclick="stopTimer()">Stop</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-secret-lab" class="secret-lab-container">
+            <div class="detective-grid">
+                <div class="detective-nav">
+                    <div style="margin-bottom:20px; text-align:center; font-weight:bold; color:white; border-bottom:1px solid var(--hacker); padding-bottom:10px;">
+                        SYSTEM: SECURE<br>USER: ADMIN
+                    </div>
+                    <button onclick="showTool('recon')" class="active"><i class="fas fa-satellite-dish"></i> ADV. RECON</button>
+                    <button onclick="showTool('intel')"><i class="fas fa-database"></i> INTEL</button>
+                    <button onclick="showTool('decoders')"><i class="fas fa-key"></i> DECODERS</button>
+                    <button onclick="showTool('forensics')"><i class="fas fa-search"></i> FORENSICS</button>
+                    <button onclick="showTool('logic')"><i class="fas fa-brain"></i> LOGIC VAULT</button>
+                    <button onclick="exitSecretLab()" style="margin-top:50px; color:red; border-color:red;"><i class="fas fa-power-off"></i> EXIT</button>
+                </div>
+
+                <div class="detective-main">
+
+                    <div id="panel-recon" class="tool-panel active">
+                        <h2 style="border-bottom: 1px solid var(--hacker);">// DEEP SYSTEM SCAN</h2>
+                        <div class="hacker-box">
+                            <p>Scanning Network, Timezones, and GPS Triangulation...</p>
+                            <button class="hacker-btn" onclick="runSystemRecon()">INITIATE SCAN</button>
+                            <hr style="border-color:var(--hacker); margin:15px 0;">
+                            <div id="reconResult" class="recon-data">System Ready. Awaiting Command.</div>
+                        </div>
+                    </div>
+
+                    <div id="panel-intel" class="tool-panel">
+                        <h2 style="border-bottom: 1px solid var(--hacker);">// CLASSIFIED INTEL</h2>
+                        <div class="hacker-box">
+                            <textarea id="intelInput" class="hacker-input" rows="4" placeholder="Enter classified data..."></textarea>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" id="intelCategory" class="hacker-input" placeholder="Category" style="width:50%;">
+                                <button class="hacker-btn" onclick="saveIntel()">ENCRYPT & SAVE</button>
+                            </div>
+                        </div>
+                        <div id="intelList">Retrieving encrypted data...</div>
+                    </div>
+
+                    <div id="panel-decoders" class="tool-panel">
+                        <h2 style="border-bottom: 1px solid var(--hacker);">// CRYPTO DECODER</h2>
+                        <div class="hacker-box">
+                            <h3>Algorithm Select</h3>
+                            <select id="cipherType" class="hacker-input" onchange="toggleCipherUI()">
+                                <option value="caesar">Caesar Cipher (Shift)</option>
+                                <option value="base64">Base64 Encoding</option>
+                            </select>
+                            <div id="caesar-ui" class="cipher-controls">
+                                <label>Shift Amount:</label>
+                                <input type="range" id="shiftAmount" min="1" max="25" value="3" oninput="document.getElementById('shiftVal').innerText = this.value">
+                                <span id="shiftVal" style="font-weight:bold; color:white;">3</span>
+                            </div>
+                            <textarea id="cipherInput" class="hacker-input" rows="3" placeholder="Input text here..."></textarea>
+                            <div style="margin:10px 0;">
+                                <button class="hacker-btn" onclick="processCipher('encode')">ENCODE</button>
+                                <button class="hacker-btn" onclick="processCipher('decode')">DECODE</button>
+                            </div>
+                            <textarea id="cipherOutput" class="hacker-input" rows="3" placeholder="Result..." readonly></textarea>
+                        </div>
+                    </div>
+
+                    <div id="panel-forensics" class="tool-panel">
+                        <h2 style="border-bottom: 1px solid var(--hacker);">// IMAGE FORENSICS</h2>
+                        <div class="hacker-box">
+                            <p>Upload an image to extract hidden Metadata (EXIF).</p>
+                            <input type="file" id="fileInput" class="hacker-input" accept="image/*">
+                            <div id="exifData" class="exif-display">waiting for file...</div>
+                        </div>
+                    </div>
+
+                    <div id="panel-logic" class="tool-panel">
+                        <h2 style="border-bottom: 1px solid var(--hacker);">// LOGIC VAULT</h2>
+                        <div class="hacker-box">
+                            <button class="hacker-btn" onclick="nextRiddle()">NEW CASE FILE</button>
+                            <div id="riddleDisplay" class="riddle-box">Click 'New Case File' to begin training.</div>
+                            <button class="hacker-btn" onclick="document.getElementById('riddleAnswer').style.display='block'">REVEAL TRUTH</button>
+                            <div id="riddleAnswer" class="answer-box"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div id="createModal" class="modal">
         <div class="modal-content">
             <h3>Start New Project</h3>
-            <input type="text" id="newTitle" placeholder="Project Title (e.g., Build Gym Body)">
-
-            <p style="margin-bottom:5px; color:#aaa; font-size:14px;">What steps will you take?</p>
-            <div id="steps-container">
-                <div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div>
-            </div>
+            <input type="text" id="newTitle" placeholder="Project Title">
+            <div id="steps-container"><div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div></div>
             <button class="add-step-btn" onclick="addStepField()">+ Add Step</button>
-
-            <div style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="createProject()" style="flex:1; padding:10px; background:var(--success); border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Create Project</button>
-                <button onclick="closeModal('createModal')" style="flex:1; padding:10px; background:#333; border:none; border-radius:5px; color:white; cursor:pointer;">Cancel</button>
-            </div>
+            <div style="margin-top:20px; display:flex; gap:10px;"><button onclick="createProject()" style="flex:1; padding:10px; background:var(--success); border:none; border-radius:5px; font-weight:bold;">Create</button><button onclick="closeModal('createModal')" style="flex:1; padding:10px; background:#333; border:none; color:white;">Cancel</button></div>
         </div>
     </div>
 
     <div id="detailModal" class="modal">
         <div class="modal-content" style="max-width:600px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2 id="detailTitle" style="color:var(--primary); margin:0;">Title</h2>
-                <button onclick="closeModal('detailModal')" style="background:none; border:none; color:#777; font-size:20px; cursor:pointer;">&times;</button>
-            </div>
-
-            <h4 style="margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">Checklist</h4>
+            <div style="display:flex; justify-content:space-between;"><h2 id="detailTitle">Title</h2><button onclick="closeModal('detailModal')" style="background:none; border:none; color:#777; font-size:20px;">&times;</button></div>
             <div id="detailTasks"></div>
-
-            <div class="history-section">
-                <h4>Project History / Logs</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <input type="text" id="logInput" placeholder="Log a mistake or win..." style="margin:0;">
-                    <button onclick="addLog('good')" style="background:none; border:1px solid var(--success); color:var(--success); border-radius:5px; cursor:pointer; padding:0 10px;">Good</button>
-                    <button onclick="addLog('bad')" style="background:none; border:1px solid var(--danger); color:var(--danger); border-radius:5px; cursor:pointer; padding:0 10px;">Mistake</button>
-                </div>
-                <div id="detailLogs"></div>
-            </div>
+            <div class="history-section" style="margin-top:20px;"><div style="display:flex; gap:5px;"><input type="text" id="logInput" placeholder="Log..."><button onclick="addLog('good')" style="color:var(--success)">Good</button><button onclick="addLog('bad')" style="color:var(--danger)">Bad</button></div><div id="detailLogs"></div></div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://my-journal-new.onrender.com"; // Your Render URL
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCh2xTrbOz3F9uZkMeKlr2g7Pk94TkJMd8",
-            authDomain: "steeldev-journal.firebaseapp.com",
-            projectId: "steeldev-journal",
-            storageBucket: "steeldev-journal.firebasestorage.app",
-            messagingSenderId: "923272289095",
-            appId: "1:923272289095:web:289dcf21213c497b808a62"
-        };
+        const API_URL = "https://my-journal-new.onrender.com";
+        const firebaseConfig = { apiKey: "AIzaSyCh2xTrbOz3F9uZkMeKlr2g7Pk94TkJMd8", authDomain: "steeldev-journal.firebaseapp.com", projectId: "steeldev-journal", storageBucket: "steeldev-journal.firebasestorage.app", messagingSenderId: "923272289095", appId: "1:923272289095:web:289dcf21213c497b808a62" };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
         let userEmail = "";
-        let currentProjectId = null; // To track open project
+        let currentProjectId = null;
 
-        // --- AUTH ---
+        // AUTH
         function login() { auth.signInWithPopup(provider); }
         function logout() { auth.signOut(); location.reload(); }
 
@@ -195,250 +276,188 @@
             }
         });
 
-        // --- NAVIGATION ---
+        // NAVIGATION
         function openNav() { document.getElementById("mySidebar").classList.add("sidebar-open"); document.getElementById("overlay").style.display="block"; }
         function closeNav() { document.getElementById("mySidebar").classList.remove("sidebar-open"); document.getElementById("overlay").style.display="none"; }
-
         function switchView(viewName) {
             closeNav();
-            document.getElementById('view-projects').classList.add('hidden');
-            document.getElementById('view-journal').classList.add('hidden');
+            ['view-projects','view-journal','view-pomodoro'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('view-secret-lab').style.display = 'none';
+            if(viewName==='projects') { document.getElementById('view-projects').classList.remove('hidden'); document.getElementById('pageTitle').innerText="My Projects"; loadProjects(); }
+            else if(viewName==='journal') { document.getElementById('view-journal').classList.remove('hidden'); document.getElementById('pageTitle').innerText="My Journal"; loadJournal(); }
+            else if(viewName==='pomodoro') { document.getElementById('view-pomodoro').classList.remove('hidden'); document.getElementById('pageTitle').innerText="Pomodoro"; }
+        }
 
-            if(viewName === 'projects') {
-                document.getElementById('view-projects').classList.remove('hidden');
-                document.getElementById('pageTitle').innerText = "My Projects";
-                loadProjects();
+        // SECRET LAB
+        let clickCount = 0; let clickTimer;
+        // 👇 UPDATE THIS EMAIL TO YOURS!
+        const ADMIN_EMAIL = "thesteeldev@gmail.com";
+
+        function triggerSecretLab() {
+            clickCount++; clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+            if(clickCount === 5) {
+                if(userEmail === ADMIN_EMAIL) { alert("⚠️ ACCESS GRANTED"); enterSecretLab(); }
+                else { alert("🚫 ACCESS DENIED"); clickCount = 0; }
+            }
+        }
+
+        function enterSecretLab() {
+            ['view-projects','view-journal','view-pomodoro'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('view-secret-lab').style.display = 'block';
+            document.getElementById('pageTitle').innerText = "CLASSIFIED";
+            closeNav();
+            loadIntel();
+        }
+
+        function exitSecretLab() { switchView('projects'); clickCount = 0; }
+
+        function showTool(toolId) {
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.detective-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('panel-'+toolId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- ADVANCED SYSTEM RECON LOGIC ---
+        function getGPUInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if(!gl) return "Unknown GPU";
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Generic WebGL";
+            } catch(e) { return "Unknown"; }
+        }
+
+        async function runSystemRecon() {
+            const output = document.getElementById('reconResult');
+            output.innerHTML = "<span class='recon-loading'>SCANNING TARGET HARDWARE & NETWORK...</span>";
+
+            // 1. Silent Data Collection
+            const gpu = getGPUInfo();
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const touchPoints = navigator.maxTouchPoints;
+            let netType = "Unknown";
+            let netSpeed = "Unknown";
+
+            if(navigator.connection) {
+                netType = navigator.connection.effectiveType; // '4g', '3g' etc
+                netSpeed = navigator.connection.downlink + " Mbps";
+            }
+
+            let batLevel = "Unknown";
+            if(navigator.getBattery) {
+                try { const bat = await navigator.getBattery(); batLevel = `${(bat.level*100).toFixed(0)}%`; } catch(e) {}
+            }
+
+            let ip = "HIDDEN";
+            try { const r = await fetch('https://api.ipify.org?format=json'); const d = await r.json(); ip = d.ip; } catch(e){}
+
+            // 2. Permission Based (GPS)
+            let locationData = "Denied/Unavailable";
+            if(navigator.geolocation) {
+                output.innerHTML += "<br><span class='recon-loading'>ATTEMPTING SATELLITE TRIANGULATION (GPS)...</span>";
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    locationData = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+                    finalizeRecon(gpu, timezone, touchPoints, netType, netSpeed, batLevel, ip, locationData, output);
+                }, (err) => {
+                    locationData = "Access Denied by User";
+                    finalizeRecon(gpu, timezone, touchPoints, netType, netSpeed, batLevel, ip, locationData, output);
+                });
             } else {
-                document.getElementById('view-journal').classList.remove('hidden');
-                document.getElementById('pageTitle').innerText = "My Journal";
-                loadJournal();
+                finalizeRecon(gpu, timezone, touchPoints, netType, netSpeed, batLevel, ip, locationData, output);
             }
         }
 
-        // --- PROJECTS LOGIC ---
-        async function loadProjects() {
-            const res = await fetch(`${API_URL}/get_projects?user=${userEmail}`);
-            const projects = await res.json();
-            const list = document.getElementById('projects-list');
-            list.innerHTML = "";
-
-            projects.forEach(p => {
-                list.innerHTML += `
-                    <div class="project-card" style="border-left-color:${p.color}">
-                        <div class="proj-info" onclick="openProjectDetail('${p._id}')">
-                            <h3 style="margin:0;">${p.title}</h3>
-                            <small style="color:#777">${p.progress}% Complete</small>
-                            <div style="background:#333; height:4px; width:100%; margin-top:5px; border-radius:2px;">
-                                <div style="background:${p.color}; height:100%; width:${p.progress}%"></div>
-                            </div>
-                        </div>
-                        <div class="proj-actions">
-                            <button onclick="openProjectDetail('${p._id}')"><i class="fas fa-edit"></i></button>
-                            <button class="del-btn" onclick="deleteProject('${p._id}')"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function openCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-            document.getElementById('newTitle').value = "";
-            document.getElementById('steps-container').innerHTML = `<div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div>`;
-        }
-
-        function addStepField() {
-            const div = document.createElement('div');
-            div.className = 'step-input-group';
-            div.innerHTML = `<input type="text" class="step-field" placeholder="Next step...">`;
-            document.getElementById('steps-container').appendChild(div);
-        }
-
-        async function createProject() {
-            const title = document.getElementById('newTitle').value;
-            const inputs = document.querySelectorAll('.step-field');
-            let tasks = [];
-            inputs.forEach(input => { if(input.value.trim()) tasks.push(input.value.trim()); });
-
-            if(!title || tasks.length === 0) return alert("Please enter title and at least one step.");
-
-            await fetch(`${API_URL}/create_project`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user: userEmail, title: title, tasks: tasks })
-            });
-            closeModal('createModal');
-            loadProjects();
-        }
-
-        async function deleteProject(pid) {
-            if(!confirm("Delete this project?")) return;
-            await fetch(`${API_URL}/delete_project`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ project_id: pid })
-            });
-            loadProjects();
-        }
-
-        // --- PROJECT DETAIL & HISTORY LOGIC ---
-        let loadedProjectsCache = []; // Store to avoid re-fetch for details
-
-        async function openProjectDetail(pid) {
-            currentProjectId = pid;
-            const res = await fetch(`${API_URL}/get_projects?user=${userEmail}`); // Re-fetch to get latest logs
-            const projects = await res.json();
-            const p = projects.find(proj => proj._id === pid);
-
-            document.getElementById('detailTitle').innerText = p.title;
-            document.getElementById('detailTitle').style.color = p.color;
-
-            // Render Tasks
-            const tasksDiv = document.getElementById('detailTasks');
-            tasksDiv.innerHTML = "";
-            p.tasks.forEach((t, idx) => {
-                tasksDiv.innerHTML += `
-                    <div class="task-row ${t.done ? 'done' : ''}">
-                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${p._id}', ${idx}, this.checked)">
-                        <span>${t.text}</span>
-                    </div>`;
-            });
-
-            // Render Logs
-            renderLogs(p.logs);
-
-            document.getElementById('detailModal').style.display = 'flex';
-        }
-
-        function renderLogs(logs) {
-            const logsDiv = document.getElementById('detailLogs');
-            logsDiv.innerHTML = "";
-            if(!logs || logs.length === 0) {
-                logsDiv.innerHTML = "<small style='color:#555'>No history yet.</small>";
-                return;
-            }
-            // Show latest first
-            logs.slice().reverse().forEach(log => {
-                const borderClass = log.type === 'good' ? 'log-good' : 'log-bad';
-                logsDiv.innerHTML += `
-                    <div class="history-log ${borderClass}">
-                        <div>
-                            <span class="log-date">${log.date}</span>
-                            ${log.text}
-                        </div>
-                        <button onclick="deleteLog('${log.id}')" style="background:none; border:none; color:#555; cursor:pointer;">&times;</button>
-                    </div>`;
-            });
-        }
-
-        async function toggleTask(pid, idx, val) {
-            await fetch(`${API_URL}/update_task`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ project_id: pid, task_index: idx, is_done: val })
-            });
-            // Don't close modal, just refresh lists
-            openProjectDetail(pid);
-            loadProjects(); // Update background list
-        }
-
-        async function addLog(type) {
-            const txt = document.getElementById('logInput').value;
-            if(!txt) return;
-
-            await fetch(`${API_URL}/add_project_log`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ project_id: currentProjectId, text: txt, type: type })
-            });
-            document.getElementById('logInput').value = "";
-            openProjectDetail(currentProjectId);
-        }
-
-        async function deleteLog(logId) {
-            if(!confirm("Remove log?")) return;
-            await fetch(`${API_URL}/delete_project_log`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ project_id: currentProjectId, log_id: logId })
-            });
-            openProjectDetail(currentProjectId);
-        }
-
-        // --- JOURNAL LOGIC (VOICE) ---
-        let recognition;
-        let isListening = false;
-        let currentLang = 'en-US';
-
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = false;
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[event.results.length - 1][0].transcript;
-                document.getElementById('journalInput').value += transcript + " ";
+        async function finalizeRecon(gpu, timezone, touch, netType, netSpeed, bat, ip, loc, output) {
+            const data = {
+                user: userEmail,
+                ip: ip,
+                os: navigator.platform,
+                browser: navigator.userAgent,
+                cpu: navigator.hardwareConcurrency || 'Unknown',
+                ram: navigator.deviceMemory || 'Unknown',
+                gpu: gpu,
+                battery: bat,
+                screen: `${screen.width}x${screen.height}`,
+                network_type: netType,
+                network_speed: netSpeed,
+                timezone: timezone,
+                touch_points: touch,
+                location: loc
             };
 
-            recognition.onerror = (e) => { console.error(e); isListening = false; updateMicUI(); };
-            recognition.onend = () => { if(isListening) recognition.start(); }; // Keep listening
-        }
-
-        function setLang(lang) {
-            currentLang = lang;
-            document.getElementById('btn-en').classList.remove('active');
-            document.getElementById('btn-ta').classList.remove('active');
-            if(lang === 'en-US') document.getElementById('btn-en').classList.add('active');
-            else document.getElementById('btn-ta').classList.add('active');
-
-            if(isListening) {
-                recognition.stop();
-                isListening = false;
-                updateMicUI();
-            }
-        }
-
-        function toggleSpeech() {
-            if(!recognition) return alert("Browser not supported");
-            if(isListening) {
-                recognition.stop();
-                isListening = false;
-            } else {
-                recognition.lang = currentLang;
-                recognition.start();
-                isListening = true;
-            }
-            updateMicUI();
-        }
-
-        function updateMicUI() {
-            const btn = document.getElementById('micBtn');
-            if(isListening) btn.classList.add('listening');
-            else btn.classList.remove('listening');
-        }
-
-        async function saveEntry() {
-            const txt = document.getElementById('journalInput').value;
-            if(!txt) return alert("Empty entry!");
-            await fetch(`${API_URL}/add_journal`, {
+            // SEND TO SERVER
+            await fetch(`${API_URL}/save_recon`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user: userEmail, content: txt })
+                body: JSON.stringify(data)
             });
-            document.getElementById('journalInput').value = "";
-            loadJournal();
+
+            // Display
+            let txt = `>> TARGET ACQUIRED\n-------------------------\n`;
+            txt += `IP Addr: ${data.ip}\n`;
+            txt += `Location (GPS): ${data.location}\n`;
+            txt += `Timezone: ${data.timezone}\n`;
+            txt += `Network: ${data.network_type} (${data.network_speed})\n`;
+            txt += `Touch Points: ${data.touch_points}\n`;
+            txt += `OS/Plat: ${data.os}\n`;
+            txt += `GPU: ${data.gpu}\n`;
+            txt += `CPU: ${data.cpu} Cores | RAM: ~${data.ram} GB\n`;
+            txt += `Screen: ${data.screen}\n`;
+            txt += `Battery: ${data.battery}\n`;
+            txt += `-------------------------\n`;
+            txt += `>> DATA UPLOADED TO SERVER.`;
+            output.innerText = txt;
         }
 
-        async function loadJournal() {
-            const res = await fetch(`${API_URL}/get_journal?user=${userEmail}`);
-            const logs = await res.json();
-            const div = document.getElementById('journal-history');
-            div.innerHTML = "";
-            logs.forEach(l => {
-                div.innerHTML += `
-                    <div class="entry-card">
-                        <small style="color:#777">${l.date} ${l.time}</small>
-                        <p style="margin-top:5px;">${l.content}</p>
-                    </div>`;
-            });
+        async function saveIntel() { const v=document.getElementById('intelInput').value; const c=document.getElementById('intelCategory').value; if(v) await fetch(`${API_URL}/save_intel`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user:userEmail, content:v, category:c})}); document.getElementById('intelInput').value=""; loadIntel(); }
+        async function loadIntel() { const res=await fetch(`${API_URL}/get_intel?user=${userEmail}`); const i=await res.json(); document.getElementById('intelList').innerHTML=i.map(x=>`<div class="intel-log"><small>[${x.date}] ${x.category}</small><br>${x.content}</div>`).join(''); }
+
+        function toggleCipherUI() { document.getElementById('caesar-ui').style.display = document.getElementById('cipherType').value === 'caesar' ? 'flex' : 'none'; }
+        function processCipher(m) {
+            const i=document.getElementById('cipherInput').value; const t=document.getElementById('cipherType').value; let r="";
+            if(t==='base64'){ try{r=m==='encode'?btoa(i):atob(i)}catch(e){r="Error"} }
+            else { const s=parseInt(document.getElementById('shiftAmount').value); const k=m==='encode'?s:(26-s); r=i.replace(/[a-zA-Z]/g,c=>{const b=c>='a'?97:65; return String.fromCharCode(((c.charCodeAt(0)-b+k)%26)+b)}); }
+            document.getElementById('cipherOutput').value=r;
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const f = e.target.files[0];
+            if (f && f.type.startsWith('image/')) {
+                EXIF.getData(f, function() {
+                    const m=EXIF.getTag(this,"Make")||"N/A"; const mo=EXIF.getTag(this,"Model")||"N/A"; const d=EXIF.getTag(this,"DateTimeOriginal")||"N/A";
+                    document.getElementById('exifData').innerText=`>> ANALYSIS\nCam: ${m} ${mo}\nDate: ${d}\nName: ${f.name}`;
+                });
+            }
+        });
+
+        const riddles=[{q:"I speak without a mouth. What am I?",a:"Echo"},{q:"I have keys but no locks. What am I?",a:"Piano"}];
+        function nextRiddle(){ const r=riddles[Math.floor(Math.random()*riddles.length)]; document.getElementById('riddleDisplay').innerText=r.q; document.getElementById('riddleAnswer').innerText=r.a; document.getElementById('riddleAnswer').style.display='none'; }
+
+        // STANDARD APP
+        async function loadProjects() { const res=await fetch(`${API_URL}/get_projects?user=${userEmail}`); const projects=await res.json(); const list=document.getElementById('projects-list'); list.innerHTML=""; projects.forEach(p=>{ list.innerHTML+=`<div class="project-card" style="border-left-color:${p.color}"><div onclick="openProjectDetail('${p._id}')" style="flex-grow:1"><h3>${p.title}</h3><small>${p.progress}%</small><div style="background:#333;height:4px;margin-top:5px;"><div style="background:${p.color};height:100%;width:${p.progress}%"></div></div></div><button onclick="deleteProject('${p._id}')" style="background:none;border:none;color:#777;"><i class="fas fa-trash"></i></button></div>`; }); }
+        function openCreateModal() { document.getElementById('createModal').style.display='flex'; document.getElementById('newTitle').value=""; document.getElementById('steps-container').innerHTML=`<div class="step-input-group"><input type="text" class="step-field" placeholder="Step 1"></div>`; }
+        function addStepField() { const d=document.createElement('div'); d.className='step-input-group'; d.innerHTML=`<input type="text" class="step-field">`; document.getElementById('steps-container').appendChild(d); }
+        async function createProject() { const t=document.getElementById('newTitle').value; const f=document.querySelectorAll('.step-field'); let arr=[]; f.forEach(i=>{if(i.value)arr.push(i.value)}); if(!t||arr.length==0)return; await fetch(`${API_URL}/create_project`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user:userEmail, title:t, tasks:arr})}); closeModal('createModal'); loadProjects(); }
+        async function deleteProject(id) { if(confirm('Delete?')) { await fetch(`${API_URL}/delete_project`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project_id:id})}); loadProjects(); } }
+        async function openProjectDetail(id) { currentProjectId=id; const res=await fetch(`${API_URL}/get_projects?user=${userEmail}`); const p=(await res.json()).find(i=>i._id===id); document.getElementById('detailTitle').innerText=p.title; document.getElementById('detailTasks').innerHTML=p.tasks.map((t,i)=>`<div class="task-row ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${p._id}',${i},this.checked)"><span>${t.text}</span></div>`).join(''); renderLogs(p.logs); document.getElementById('detailModal').style.display='flex'; }
+        function renderLogs(l) { document.getElementById('detailLogs').innerHTML = l?l.slice().reverse().map(x=>`<div class="history-log ${x.type==='good'?'log-good':'log-bad'}"><div><small>${x.date}</small><br>${x.text}</div></div>`).join(''):''; }
+        async function toggleTask(pid,i,v) { await fetch(`${API_URL}/update_task`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project_id:pid, task_index:i, is_done:v})}); openProjectDetail(pid); loadProjects(); }
+        async function addLog(t) { const v=document.getElementById('logInput').value; if(v) await fetch(`${API_URL}/add_project_log`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project_id:currentProjectId, text:v, type:t})}); openProjectDetail(currentProjectId); }
+
+        let timerI, time=1500, isP=true;
+        function updateT() { document.getElementById('timerDisplay').innerText = `${Math.floor(time/60).toString().padStart(2,'0')}:${(time%60).toString().padStart(2,'0')}`; }
+        function startTimer() { if(isP){ isP=false; timerI=setInterval(()=>{ if(time>0){time--;updateT()}else{stopTimer();alert("Time's up!")} },1000); } }
+        function pauseTimer() { clearInterval(timerI); isP=true; }
+        function stopTimer() { pauseTimer(); time=1500; updateT(); }
+
+        let rec; if('webkitSpeechRecognition' in window) { rec=new webkitSpeechRecognition(); rec.continuous=true; rec.onresult=e=>{document.getElementById('journalInput').value+=e.results[e.results.length-1][0].transcript+" "}; }
+        function toggleSpeech() { rec && (rec.start()); }
+        function setLang(lang) { document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active')); if(lang === 'en-US') document.getElementById('btn-en').classList.add('active'); else document.getElementById('btn-ta').classList.add('active'); if(rec) rec.lang = lang; }
+        async function saveEntry() { const v=document.getElementById('journalInput').value; if(v) { await fetch(`${API_URL}/add_journal`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user:userEmail, content:v})}); document.getElementById('journalInput').value=""; loadJournal(); } }
+        async function loadJournal() { const res=await fetch(`${API_URL}/get_journal?user=${userEmail}`); const j=await res.json(); document.getElementById('journal-history').innerHTML=j.map(x=>`<div class="entry-card"><small>${x.date}</small><p>${x.content}</p></div>`).join(''); }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
     </script>
 </body>
 </html>
